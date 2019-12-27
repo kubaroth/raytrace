@@ -150,3 +150,16 @@ vec3 random_in_unit_sphere() {
     } while (p.squared_length() >= 1.0);
     return p;
 }
+
+
+class ray{
+    vec3 A;
+    vec3 B;
+
+  public:
+     ray(){}
+     ray(const vec3& a, const vec3& b) {A = a; B = b; }
+     vec3 origin() const { return A; }
+     vec3 direction() const { return B; }
+     vec3 point_at_parameter(float t) const {return A + t*B;}
+};
