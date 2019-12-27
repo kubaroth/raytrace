@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-#include <fstream>
+//#include <fstream>
 
 #include "vec3.h"
 
@@ -35,28 +35,28 @@ struct Png {
     Png& operator>>(unsigned int v) {return *this<<(v>>24)<<(v>>16)<<(v>>8)<<v;}
 };
 
-void save_ppm(vec3 *fb, int width, int height){
-    std::ofstream ofs ("gradient.ppm", std::ofstream::binary);
-    // initial bytes
-    ofs <<"P6" << std::endl
-          << width << " "        << height << std::endl
-          << "255" << std::endl;
+// void save_ppm(vec3 *fb, int width, int height){
+//     std::ofstream ofs ("gradient.ppm", std::ofstream::binary);
+//     // initial bytes
+//     ofs <<"P6" << std::endl
+//           << width << " "        << height << std::endl
+//           << "255" << std::endl;
 
-    for (int j = height-1; j>= 0; j--){
-          for (int i = 0; i < width; i++){
-              size_t pixel_index = j * 3 * width + i*3;
-              float r = fb[pixel_index].r();
-              float g = fb[pixel_index].g();
-              float b = fb[pixel_index].b();
-              int ir = int(255.99*r);
-              int ig = int(255.99*g);
-              int ib = int(255.99*b);
-              // std::cout << ir << " " << ig << " " << ib << '\n';
-              ofs << (unsigned char)ir << (unsigned char)ig << (unsigned char)ib;
-          }
-    }
-    ofs.close();
-}
+//     for (int j = height-1; j>= 0; j--){
+//           for (int i = 0; i < width; i++){
+//               size_t pixel_index = j * 3 * width + i*3;
+//               float r = fb[pixel_index].r();
+//               float g = fb[pixel_index].g();
+//               float b = fb[pixel_index].b();
+//               int ir = int(255.99*r);
+//               int ig = int(255.99*g);
+//               int ib = int(255.99*b);
+//               // std::cout << ir << " " << ig << " " << ib << '\n';
+//               ofs << (unsigned char)ir << (unsigned char)ig << (unsigned char)ib;
+//           }
+//     }
+//     ofs.close();
+// }
 
 void save_png(vec3 *fb, int width, int height){
     int w = width, h = height;
