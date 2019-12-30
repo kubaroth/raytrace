@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <iostream>
 
+using namespace std;  // TODO
+
 class vec3{
   public:
     float e[3]; // all public as we have bunch of free functions to access internal v.e[1] etc  
@@ -184,11 +186,11 @@ class hitable {
 
 
 class hitable_list : public hitable{
-    hitable **list;
+    vector<hitable*> list;
     int list_size;
   public:
      hitable_list(){}
-     hitable_list(hitable **l, int n) {list = l; list_size=n;}
+     hitable_list(const vector<hitable*> &l) {list = l; list_size=l.size();}
      virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
  
 };

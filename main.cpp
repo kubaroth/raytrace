@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <time.h>
 
+#include <vector>
+
 #include "vec3.h"
 #include "utils.h"
 
@@ -54,10 +56,10 @@ void render(vec3 *fb, int max_x, int max_y,
 }
 
 
-void create_world(hitable **d_list, hitable **d_world){
-    *(d_list) = new sphere(vec3(0,0,-1), 0.5);
-    *(d_list+1) = new sphere(vec3(0,-100.5, -1), 100);
-    *d_world = new hitable_list(d_list,2);
+void create_world(vector<hitable*> &d_list, hitable **d_world){  // ** - set refernce pointer to d_world
+    d_list.emplace_back(new sphere(vec3(0,0,-1), 0.5));
+    d_list.emplace_back(new sphere(vec3(0,-100.5, -1), 100));
+    *d_world = new hitable_list(d_list);
 }
 
 
@@ -77,8 +79,8 @@ int main (){
     vec3 *fb;
     fb = new vec3[fb_size];
 
-    // make workd of hittable objects;
-    hitable* d_list[2];
+    // make world of hittable objects;
+    vector<hitable*> d_list;
     hitable *d_world;
     create_world(d_list, &d_world);
 
