@@ -38,10 +38,7 @@ vec3 color(const ray& r, hitable *world){
 
 
 void render(vec3 *fb, int max_x, int max_y, int ns,
-            vec3 lower_left_corner,
-            vec3 horizontal,
-            vec3 vertical,
-            vec3 origin,
+            camera *camera,
             hitable *world){
     for (int j = max_y-1; j >=0; j--){
         for (int i =0; i < max_x; i++){
@@ -50,10 +47,8 @@ void render(vec3 *fb, int max_x, int max_y, int ns,
             for (int s=0; s<ns; s++) {  // sampling
                 float u = float(i + drand48()) / float(max_x);
                 float v = float(j + drand48()) / float(max_y);
-                ray r(origin, lower_left_corner + u * horizontal + v*vertical);
-                //ray r = (*cam)->get_ray(u,v);
+                ray r = camera->get_ray(u, v);
                 col += color(r, world);
-                // cout << s << " " ;
             }
             fb[pixel_index] = col/float(ns);
 
@@ -62,10 +57,13 @@ void render(vec3 *fb, int max_x, int max_y, int ns,
 }
 
 
-void create_world(vector<hitable*> &d_list, hitable **d_world){  // ** - set refernce pointer to d_world
+void create_world(vector<hitable*> &d_list,
+                  hitable **d_world,  /* ** - set refernce pointer to d_world */
+                  camera **d_camera){
     d_list.emplace_back(new sphere(vec3(0,0,-1), 0.5));
     d_list.emplace_back(new sphere(vec3(0,-100.5, -1), 100));
     *d_world = new hitable_list(d_list);
+    *d_camera = new camera();
 }
 
 
@@ -89,17 +87,15 @@ int main (){
     // make world of hittable objects;
     vector<hitable*> d_list;
     hitable *d_world;
-    create_world(d_list, &d_world);
+    camera *d_camera;
+    create_world(d_list, &d_world, &d_camera);
 
     clock_t start, stop;
     start = clock();
 
     // Render
     render(fb,nx,ny, ns, 
-           vec3(-2.0, -1.0, -1.0),
-           vec3(4.0,0.0,0.0),  /* camera decrption*/
-           vec3(0.0,2.0, 0.0),
-           vec3(0.0, 0.0, 0.0),
+           d_camera,
            d_world
         );
 
