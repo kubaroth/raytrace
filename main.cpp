@@ -37,7 +37,7 @@ vec3 color(const ray& r, hitable *world){
 }
 
 
-void render(vec3 *fb, int max_x, int max_y,
+void render(vec3 *fb, int max_x, int max_y, int ns,
             vec3 lower_left_corner,
             vec3 horizontal,
             vec3 vertical,
@@ -45,11 +45,17 @@ void render(vec3 *fb, int max_x, int max_y,
             hitable *world){
     for (int j = max_y-1; j >=0; j--){
         for (int i =0; i < max_x; i++){
+            vec3 col(0,0,0);
             int pixel_index = j*max_x + i;
-            float u = float(i)/ float(max_x);
-            float v = float(j) / float(max_y);
-            ray r(origin, lower_left_corner + u * horizontal + v*vertical);
-            fb[pixel_index] = color(r, world);
+            for (int s=0; s<ns; s++) {  // sampling
+                float u = float(i + drand48()) / float(max_x);
+                float v = float(j + drand48()) / float(max_y);
+                ray r(origin, lower_left_corner + u * horizontal + v*vertical);
+                //ray r = (*cam)->get_ray(u,v);
+                col += color(r, world);
+                // cout << s << " " ;
+            }
+            fb[pixel_index] = col/float(ns);
 
         }
     }
@@ -70,6 +76,7 @@ void free_world(hitable **d_list, hitable **d_world){
 }
 
 int main (){
+    int ns = 10; // number of samples
     int nx = 200;
     int ny = 100;
     int num_pixels = nx*ny;
@@ -88,7 +95,7 @@ int main (){
     start = clock();
 
     // Render
-    render(fb,nx,ny,
+    render(fb,nx,ny, ns, 
            vec3(-2.0, -1.0, -1.0),
            vec3(4.0,0.0,0.0),  /* camera decrption*/
            vec3(0.0,2.0, 0.0),
