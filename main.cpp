@@ -27,7 +27,9 @@ vec3 color(const ray& r, hitable *world){
     hit_record rec;
     bool hit_anything = world->hit(r,0.0, FLT_MAX, rec);
     if(hit_anything){
-        return 0.5f*vec3(rec.normal.x() +1.0f, rec.normal.y() +1.0f, rec.normal.z() + 1.0f);
+        vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+        return 0.5*color( ray(rec.p, target-rec.p), world);  // recursion
+
     }
     else{
         vec3 unit_direction = unit_vector(r.direction());
