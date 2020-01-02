@@ -293,3 +293,27 @@ class lambertian : public material {
         
     }
 };
+
+
+vec3 reflect(const vec3 &v, const vec3& n){
+    return v - 2*dot(v,n) * n;
+
+}
+
+
+class metal : public material{
+    vec3 albedo;    
+    float fuzz; // 0: perfect reflection 
+  public:
+    metal (const vec3& a, float f=0.0) : albedo(a),fuzz(f)  {
+        if (f > 1) fuzz = 1;
+    }
+    virtual bool scatter (const ray& r_in, const hit_record& rec, vec3 &attenuation, ray &scattered) const{
+        vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+        scattered = ray(rec.p, reflected + fuzz * random_in_unit_sphere()); // larger fuzz more blurry metal
+        attenuation = albedo;
+        return (dot(scattered.direction(), rec.normal) > 0);
+
+    }
+    
+};

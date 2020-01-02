@@ -23,11 +23,17 @@ bool hit_sphere(const vec3& center, float radius, const ray& r){
     return (discriminant > 0.0f);
 
 }
-vec3 color(const ray& r, hitable *world){
+vec3 color(const ray& r, hitable *world, int depth){
     hit_record rec;
     if (world->hit(r, 0.001, MAXFLOAT, rec)) {  //ignore hits very near zero
-        vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-        return 0.5*color( ray(rec.p, target-rec.p), world);
+        ray scattered;
+        vec3 attenuation;  // atenuation gets updated in the mat_ptr->scatterer
+        if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation,scattered)){
+            return attenuation * color(scattered, world, depth+1);
+        }
+        else{
+            return vec3(0,0,0);
+        }
     }
     else{
         vec3 unit_direction = unit_vector(r.direction());
@@ -48,7 +54,7 @@ void render(vec3 *fb, int max_x, int max_y, int ns,
                 float u = float(i + drand48()) / float(max_x);
                 float v = float(j + drand48()) / float(max_y);
                 ray r = camera->get_ray(u, v);
-                col += color(r, world);
+                col += color(r, world, 0 /*depth*/);
             }
             fb[pixel_index] = col/float(ns);
 
@@ -61,10 +67,12 @@ void create_world(vector<hitable*> &d_list,
                   hitable **d_world,  /* ** - set refernce pointer to d_world */
                   camera **d_camera){
 
-    d_list.emplace_back(new sphere(vec3(0,0,-1), 0.5,
-             new lambertian(vec3(0.8,0.8,0.0))));
-    d_list.emplace_back(new sphere(vec3(0,-100.5, -1), 100,
-            new lambertian(vec3(0.8,0.8,0.0))));
+    // ground
+    d_list.emplace_back(new sphere(vec3(0,-100.5, -1), 100, new lambertian(vec3(0.8,0.8,0.0))));
+    d_list.emplace_back(new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.8,0.3,0.3))));
+    d_list.emplace_back(new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8,0.6,0.2), 0 /*perfect reflection */)));
+    d_list.emplace_back(new sphere(vec3(-1,0,-1), 0.5, new metal(vec3(0.5,0.5,0.5), 0.8 /*fuzzy*/)));
+        
     *d_world = new hitable_list(d_list);
     *d_camera = new camera();
 }
