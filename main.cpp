@@ -25,11 +25,9 @@ bool hit_sphere(const vec3& center, float radius, const ray& r){
 }
 vec3 color(const ray& r, hitable *world){
     hit_record rec;
-    bool hit_anything = world->hit(r,0.0, FLT_MAX, rec);
-    if(hit_anything){
+    if (world->hit(r, 0.001, MAXFLOAT, rec)) {  //ignore hits very near zero
         vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-        return 0.5*color( ray(rec.p, target-rec.p), world);  // recursion
-
+        return 0.5*color( ray(rec.p, target-rec.p), world);
     }
     else{
         vec3 unit_direction = unit_vector(r.direction());
@@ -62,8 +60,11 @@ void render(vec3 *fb, int max_x, int max_y, int ns,
 void create_world(vector<hitable*> &d_list,
                   hitable **d_world,  /* ** - set refernce pointer to d_world */
                   camera **d_camera){
-    d_list.emplace_back(new sphere(vec3(0,0,-1), 0.5));
-    d_list.emplace_back(new sphere(vec3(0,-100.5, -1), 100));
+
+    d_list.emplace_back(new sphere(vec3(0,0,-1), 0.5,
+             new lambertian(vec3(0.8,0.8,0.0))));
+    d_list.emplace_back(new sphere(vec3(0,-100.5, -1), 100,
+            new lambertian(vec3(0.8,0.8,0.0))));
     *d_world = new hitable_list(d_list);
     *d_camera = new camera();
 }

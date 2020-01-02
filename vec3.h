@@ -172,7 +172,7 @@ struct hit_record{
     float t;
     vec3 p;
     vec3 normal;
-    //material *mat_ptr;
+    material *mat_ptr;
 };
 
 class hitable {
@@ -216,7 +216,7 @@ class sphere: public hitable {
    material * mat;
   public:
      sphere() {}
-  sphere(vec3 cen, float r) : center(cen), radius(r) {};
+    sphere(vec3 cen, float r, material * m) : center(cen), radius(r), mat(m) {};
      virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
 
 };
@@ -232,7 +232,7 @@ bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const{
             rec.t = temp;
             rec.p = r.point_at_parameter(rec.t);
             rec.normal = (rec.p - center) / radius;
-            // rec.mat_ptr = mat;
+            rec.mat_ptr = mat;
             return true;
         }
         temp = (-b + sqrt(discriminant)) / a;
@@ -240,7 +240,7 @@ bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const{
             rec.t = temp;
             rec.p = r.point_at_parameter(rec.t);
             rec.normal = (rec.p - center) / radius;
-            // rec.mat_ptr = mat;
+            rec.mat_ptr = mat;
             return true;
         }
     }
@@ -263,4 +263,33 @@ public:
         return ray(origin, lower_left_corner + u * horizontal + v * vertical - origin);
     }
 
+};
+
+class material{  /* needs also be added to  hit_racord class */
+  public:
+    /* when ray hit the surface the hit_record material will be set to point to
+       the color() then can look it up
+     */
+    virtual bool scatter(const ray& r_in,
+                         const hit_record& rec, /* to stuff whatever information we want here instead of explicit parms*/
+                         vec3 &attenuation,
+                         ray & scattered) const = 0;
+};
+
+class lambertian : public material {
+
+    vec3 albedo;    
+
+  public:
+  lambertian(const vec3& a) : albedo(a){}
+    virtual bool scatter(const ray& r_in,
+                         const hit_record& rec,
+                         vec3 &attenuation,
+                         ray & scattered) const {
+        vec3 target = rec.p +rec.normal + random_in_unit_sphere();
+        scattered = ray(rec.p, target - rec.p);
+        attenuation = albedo;
+        return true;
+        
+    }
 };
