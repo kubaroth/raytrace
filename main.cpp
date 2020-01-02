@@ -70,8 +70,8 @@ void create_world(vector<hitable*> &d_list,
     // ground
     d_list.emplace_back(new sphere(vec3(0,-100.5, -1), 100, new lambertian(vec3(0.8,0.8,0.0))));
     d_list.emplace_back(new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.8,0.3,0.3))));
-    d_list.emplace_back(new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8,0.6,0.2), 0 /*perfect reflection */)));
     d_list.emplace_back(new sphere(vec3(-1,0,-1), 0.5, new metal(vec3(0.5,0.5,0.5), 0.8 /*fuzzy*/)));
+    d_list.emplace_back(new sphere(vec3(1,0,-1), 0.5, new dielectric(1.31)));  // ice
         
     *d_world = new hitable_list(d_list);
     *d_camera = new camera();
