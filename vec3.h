@@ -181,7 +181,7 @@ class hitable {
                       float t_min,
                       float t_max,
                       hit_record& rec) const = 0;
-    virtual ~hitable() {};
+    virtual ~hitable() {}
 };
 
 
@@ -216,9 +216,12 @@ class sphere: public hitable {
    material * mat;
   public:
      sphere() {}
-    sphere(vec3 cen, float r, material * m) : center(cen), radius(r), mat(m) {};
+     sphere(vec3 cen, float r, material * m) : center(cen), radius(r), mat(m) {};
      virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
-
+     ~sphere() {
+        // TODO: handle clenup here - not ideal as material is not fully defined at this point
+        // probably a better solution would be to use use unique_ptr.
+    }
 };
 bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const{
     vec3 oc = r.origin() - center;
@@ -267,6 +270,7 @@ public:
 
 class material{  /* needs also be added to  hit_racord class */
   public:
+    virtual ~material() {};
     /* when ray hit the surface the hit_record material will be set to point to
        the color() then can look it up
      */
@@ -278,7 +282,7 @@ class material{  /* needs also be added to  hit_racord class */
 
 class lambertian : public material {
 
-    vec3 albedo;    
+    vec3 albedo;
 
   public:
   lambertian(const vec3& a) : albedo(a){}
@@ -290,7 +294,6 @@ class lambertian : public material {
         scattered = ray(rec.p, target - rec.p);
         attenuation = albedo;
         return true;
-        
     }
 };
 
@@ -302,8 +305,8 @@ vec3 reflect(const vec3 &v, const vec3& n){
 
 
 class metal : public material{
-    vec3 albedo;    
-    float fuzz; // 0: perfect reflection 
+    vec3 albedo;
+    float fuzz; // 0: perfect reflection
   public:
     metal (const vec3& a, float f=0.0) : albedo(a),fuzz(f)  {
         if (f > 1) fuzz = 1;
@@ -315,7 +318,7 @@ class metal : public material{
         return (dot(scattered.direction(), rec.normal) > 0);
 
     }
-    
+
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -407,8 +410,8 @@ class dielectric : public material{
 
         ////////// with schlick
         
-        float reflect_prob;  
-        float cosine;  
+        float reflect_prob;
+        float cosine;
 
         if (dot(r_in.direction(), rec.normal) > 0){
             outward_normal = -rec.normal;

@@ -14,15 +14,6 @@ using std::cout;
 using std::endl;
 
 
-bool hit_sphere(const vec3& center, float radius, const ray& r){
-    vec3 oc = r.origin() - center;
-    float a = dot(r.direction(), r.direction());
-    float b= 2.0f  * dot(oc, r.direction());
-    float c= dot(oc,oc) - radius*radius;
-    float discriminant = b*b - 4.0f*a*c;
-    return (discriminant > 0.0f);
-
-}
 vec3 color(const ray& r, hitable *world, int depth){
     hit_record rec;
     if (world->hit(r, 0.001, MAXFLOAT, rec)) {  //ignore hits very near zero
@@ -35,7 +26,7 @@ vec3 color(const ray& r, hitable *world, int depth){
             return vec3(0,0,0);
         }
     }
-    else{
+    else{  // background
         vec3 unit_direction = unit_vector(r.direction());
         float t = 0.5f*(unit_direction.y() +1.0f);
         return (1.0f-t)*vec3(1.0,1.0,1.0) + t*vec3(0.5,0.7,1.0);
@@ -71,23 +62,31 @@ void create_world(vector<hitable*> &d_list,
     d_list.emplace_back(new sphere(vec3(0,-100.5, -1), 100, new lambertian(vec3(0.8,0.8,0.0))));
     d_list.emplace_back(new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.8,0.3,0.3))));
     d_list.emplace_back(new sphere(vec3(-1,0,-1), 0.5, new metal(vec3(0.5,0.5,0.5), 0.8 /*fuzzy*/)));
-    d_list.emplace_back(new sphere(vec3(1,0,-1), 0.5, new dielectric(1.31)));  // ice
+    d_list.emplace_back(new sphere(vec3(1,0,-1), 0.5, new dielectric(1.5)));
         
     *d_world = new hitable_list(d_list);
     *d_camera = new camera();
 }
 
 
-void free_world(hitable **d_list, hitable **d_world){
-    delete *(d_list);
-    delete *(d_list+1);
-    delete d_world;
+void free_world(vector<hitable*> &d_list,
+                hitable **d_world,
+                camera **d_camera){
+
+    // for (auto &elem : d_list) delete elem;
+    for (int i=0; i < d_list.size(); i++){
+        hitable *aa = d_list[i];
+        delete aa;
+    }
+    delete *d_world;
+    delete *d_camera;
+
 }
 
 int main (){
-    int ns = 10; // number of samples
-    int nx = 200;
-    int ny = 100;
+    int ns = 1; // number of samples
+    int nx = 20;
+    int ny = 10;
     int num_pixels = nx*ny;
     size_t fb_size = num_pixels * sizeof(vec3);
 
@@ -116,5 +115,8 @@ int main (){
 
     save_png(fb, nx, ny);
 
+    free_world(d_list, &d_world, &d_camera);;
+    delete d_camera;
+    delete fb;
     return 0;
 }
