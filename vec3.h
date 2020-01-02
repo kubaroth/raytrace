@@ -172,7 +172,8 @@ struct hit_record{
     float t;
     vec3 p;
     vec3 normal;
-    material *mat_ptr;
+    material *mat_ptr; // holds pointer to material stored
+                       // on the object
 };
 
 class hitable {
@@ -213,10 +214,10 @@ class hitable_list : public hitable{
 class sphere: public hitable {
    vec3 center;
    float radius;
-   material * mat;
+    unique_ptr<material> mat;
   public:
      sphere() {}
-     sphere(vec3 cen, float r, material * m) : center(cen), radius(r), mat(m) {};
+    sphere(vec3 cen, float r, unique_ptr<material> && m) : center(cen), radius(r), mat(std::move(m)) {};  // move by value
      virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
      ~sphere() {
         // TODO: handle clenup here - not ideal as material is not fully defined at this point
@@ -235,7 +236,7 @@ bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const{
             rec.t = temp;
             rec.p = r.point_at_parameter(rec.t);
             rec.normal = (rec.p - center) / radius;
-            rec.mat_ptr = mat;
+            rec.mat_ptr = mat.get();
             return true;
         }
         temp = (-b + sqrt(discriminant)) / a;
@@ -243,7 +244,7 @@ bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const{
             rec.t = temp;
             rec.p = r.point_at_parameter(rec.t);
             rec.normal = (rec.p - center) / radius;
-            rec.mat_ptr = mat;
+            rec.mat_ptr = mat.get();
             return true;
         }
     }

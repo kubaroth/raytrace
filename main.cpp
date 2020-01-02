@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include <vector>
+#include <memory>
 
 #include "vec3.h"
 #include "utils.h"
@@ -59,10 +60,10 @@ void create_world(vector<hitable*> &d_list,
                   camera **d_camera){
 
     // ground
-    d_list.emplace_back(new sphere(vec3(0,-100.5, -1), 100, new lambertian(vec3(0.8,0.8,0.0))));
-    d_list.emplace_back(new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.8,0.3,0.3))));
-    d_list.emplace_back(new sphere(vec3(-1,0,-1), 0.5, new metal(vec3(0.5,0.5,0.5), 0.8 /*fuzzy*/)));
-    d_list.emplace_back(new sphere(vec3(1,0,-1), 0.5, new dielectric(1.5)));
+    d_list.emplace_back(new sphere(vec3(0,-100.5, -1), 100, make_unique<lambertian>(vec3(0.8,0.8,0.0))));
+    d_list.emplace_back(new sphere(vec3(0,0,-1), 0.5, make_unique<lambertian>(vec3(0.8,0.3,0.3))));
+    d_list.emplace_back(new sphere(vec3(-1,0,-1), 0.5, make_unique<metal>(vec3(0.5,0.5,0.5), 0.8 /*fuzzy*/)));
+    d_list.emplace_back(new sphere(vec3(1,0,-1), 0.5, make_unique<dielectric>(1.5)));
         
     *d_world = new hitable_list(d_list);
     *d_camera = new camera();
@@ -99,7 +100,7 @@ int main (){
     hitable *d_world;
     camera *d_camera;
     create_world(d_list, &d_world, &d_camera);
-
+    
     clock_t start, stop;
     start = clock();
 
