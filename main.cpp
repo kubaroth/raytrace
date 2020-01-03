@@ -71,10 +71,15 @@ void create_world(vector<hitable*> &d_list,
     // d_list.emplace_back(new sphere(vec3(-R,0,-1), R, make_unique<lambertian>(vec3(0.0, 0.0, 1.0))));
     // d_list.emplace_back(new sphere(vec3(R,0,-1), R, make_unique<lambertian>(vec3(1.0, 0.0, 0.0))));
 
-    *d_camera = new camera(vec3(-2,2,1),
-                           vec3(0,0,-1),
+    vec3 look_from(3,3,2);
+    vec3 look_at(0,0,-1);
+    *d_camera = new camera(look_from,
+                           look_at,
                            vec3(0,1,0),
-                           45, float(nx)/float(ny));
+                           20, float(nx)/float(ny),
+                           2.0, /* big aperture */
+                           (look_from-look_at).length()/* distance to focus */
+        );
     *d_world = new hitable_list(d_list);
 }
 
