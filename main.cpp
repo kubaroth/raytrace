@@ -84,6 +84,47 @@ void create_world(vector<hitable*> &d_list,
 }
 
 
+void create_scene(vector<hitable*> &d_list,
+                  hitable **d_world,
+                  camera **d_camera,
+                  int nx, int ny){
+
+    int n = 500;
+    d_list.emplace_back(new sphere(vec3(0,-1000, 0), 1000, make_unique<lambertian>(vec3(0.5,0.5,0.5))));
+    for (int a = -11; a < 11; a++){
+        for (int b = -11; b < 11; b++){
+            float choose_mat = drand48();
+            vec3 center = vec3(a + 0.9 * drand48(),
+                              0.2,
+                              b + 0.9 * drand48());
+            if ((center - vec3(4,0.2,0)).length() > 0.9){
+                if (choose_mat < 0.8) // diffuse
+                    d_list.emplace_back( new sphere(center, 0.2, make_unique<lambertian>(vec3(drand48()*drand48(), drand48()*drand48(), drand48()*drand48()))));
+                else if (choose_mat < 0.95)
+                    d_list.emplace_back( new sphere(center, 0.2, make_unique<metal>(vec3(0.5*(1+ drand48()), 0.5*(1+drand48()),0.5*(1+drand48())), 0.5 * drand48())));
+                else
+                    d_list.emplace_back( new sphere(center, 0.2, make_unique<dielectric>(1.5)));
+            }
+        }
+    }
+
+    d_list.emplace_back( new sphere(vec3(-4,1,0), 1.0, make_unique<lambertian>(vec3(0.4,0.2,0.1))));
+    d_list.emplace_back( new sphere(vec3(4,1,0), 1.0, make_unique<metal>(vec3(0.7,0.6,0.5), 0.0)));
+    d_list.emplace_back( new sphere(vec3(0,1,0), 1.0, make_unique<dielectric>(1.5)));
+
+    *d_world = new hitable_list(d_list);
+    
+    vec3 look_from(13,2,3);
+    vec3 look_at(0,0,0);
+    *d_camera = new camera(look_from,
+                           look_at,
+                           vec3(0,1,0),
+                           20, float(nx)/float(ny),
+                           0.1, /* aperture */
+                           (look_from-look_at).length()/* distance to focus */
+        );
+}
+
 void free_world(vector<hitable*> &d_list,
                 hitable **d_world,
                 camera **d_camera){
@@ -113,8 +154,11 @@ int main (){
     vector<hitable*> d_list;
     hitable *d_world;
     camera *d_camera;
-    create_world(d_list, &d_world, &d_camera, nx, ny);
-    
+
+    // create_world(d_list, &d_world, &d_camera, nx, ny);
+    create_scene(d_list, &d_world, &d_camera, nx, ny);
+
+        
     clock_t start, stop;
     start = clock();
 
