@@ -61,20 +61,20 @@ void create_world(vector<hitable*> &d_list,
                   int nx, int ny){
 
     // ground
-    // d_list.emplace_back(new sphere(vec3(0,-100.5, -1), 100, make_unique<lambertian>(vec3(0.8,0.8,0.0))));
-    // d_list.emplace_back(new sphere(vec3(0,0,-1), 0.5, make_unique<lambertian>(vec3(0.8,0.3,0.3))));
-    // d_list.emplace_back(new sphere(vec3(-1,0,-1), 0.5, make_unique<metal>(vec3(0.5,0.5,0.5), 0.8 /*fuzzy*/)));
-    // d_list.emplace_back(new sphere(vec3(1,0,-1), 0.5, make_unique<dielectric>(1.5)));
+    d_list.emplace_back(new sphere(vec3(0,-100.5, -1), 100, make_unique<lambertian>(vec3(0.8,0.8,0.0))));
+    d_list.emplace_back(new sphere(vec3(0,0,-1), 0.5, make_unique<lambertian>(vec3(0.8,0.3,0.3))));
+    d_list.emplace_back(new sphere(vec3(-1,0,-1), 0.5, make_unique<metal>(vec3(0.5,0.5,0.5), 0.8 /*fuzzy*/)));
+    d_list.emplace_back(new sphere(vec3(1,0,-1), 0.5, make_unique<dielectric>(1.5)));
         
-    // Testing camera orientation
-    float R = cos(M_PI/4);
-    d_list.emplace_back(new sphere(vec3(-R,0,-1), R, make_unique<lambertian>(vec3(0.0, 0.0, 1.0))));
-    d_list.emplace_back(new sphere(vec3(R,0,-1), R, make_unique<lambertian>(vec3(1.0, 0.0, 0.0))));
+    // // Testing camera orientation
+    // float R = cos(M_PI/4);
+    // d_list.emplace_back(new sphere(vec3(-R,0,-1), R, make_unique<lambertian>(vec3(0.0, 0.0, 1.0))));
+    // d_list.emplace_back(new sphere(vec3(R,0,-1), R, make_unique<lambertian>(vec3(1.0, 0.0, 0.0))));
 
-    *d_camera = new camera(vec3(0,0,0.25),
-                           vec3(0,0,0),
+    *d_camera = new camera(vec3(-2,2,1),
+                           vec3(0,0,-1),
                            vec3(0,1,0),
-                           90, float(nx)/float(ny));
+                           45, float(nx)/float(ny));
     *d_world = new hitable_list(d_list);
 }
 
