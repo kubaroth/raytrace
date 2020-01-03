@@ -57,16 +57,22 @@ void render(vec3 *fb, int max_x, int max_y, int ns,
 
 void create_world(vector<hitable*> &d_list,
                   hitable **d_world,  /* ** - set refernce pointer to d_world */
-                  camera **d_camera){
+                  camera **d_camera,
+                  int nx, int ny){
 
     // ground
-    d_list.emplace_back(new sphere(vec3(0,-100.5, -1), 100, make_unique<lambertian>(vec3(0.8,0.8,0.0))));
-    d_list.emplace_back(new sphere(vec3(0,0,-1), 0.5, make_unique<lambertian>(vec3(0.8,0.3,0.3))));
-    d_list.emplace_back(new sphere(vec3(-1,0,-1), 0.5, make_unique<metal>(vec3(0.5,0.5,0.5), 0.8 /*fuzzy*/)));
-    d_list.emplace_back(new sphere(vec3(1,0,-1), 0.5, make_unique<dielectric>(1.5)));
+    // d_list.emplace_back(new sphere(vec3(0,-100.5, -1), 100, make_unique<lambertian>(vec3(0.8,0.8,0.0))));
+    // d_list.emplace_back(new sphere(vec3(0,0,-1), 0.5, make_unique<lambertian>(vec3(0.8,0.3,0.3))));
+    // d_list.emplace_back(new sphere(vec3(-1,0,-1), 0.5, make_unique<metal>(vec3(0.5,0.5,0.5), 0.8 /*fuzzy*/)));
+    // d_list.emplace_back(new sphere(vec3(1,0,-1), 0.5, make_unique<dielectric>(1.5)));
         
+    
+    float R = cos(M_PI/4);
+    d_list.emplace_back(new sphere(vec3(-R,0,-1), R, make_unique<lambertian>(vec3(0.0, 0.0, 1.0))));
+    d_list.emplace_back(new sphere(vec3(R,0,-1), R, make_unique<lambertian>(vec3(1.0, 0.0, 0.0))));
+
+    *d_camera = new camera(90, float(nx)/float(ny));
     *d_world = new hitable_list(d_list);
-    *d_camera = new camera();
 }
 
 
@@ -85,9 +91,9 @@ void free_world(vector<hitable*> &d_list,
 }
 
 int main (){
-    int ns = 1; // number of samples
-    int nx = 20;
-    int ny = 10;
+    int ns = 10; // number of samples
+    int nx = 200;
+    int ny = 100;
     int num_pixels = nx*ny;
     size_t fb_size = num_pixels * sizeof(vec3);
 
@@ -99,7 +105,7 @@ int main (){
     vector<hitable*> d_list;
     hitable *d_world;
     camera *d_camera;
-    create_world(d_list, &d_world, &d_camera);
+    create_world(d_list, &d_world, &d_camera, nx, ny);
     
     clock_t start, stop;
     start = clock();
