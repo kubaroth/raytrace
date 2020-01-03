@@ -66,12 +66,15 @@ void create_world(vector<hitable*> &d_list,
     // d_list.emplace_back(new sphere(vec3(-1,0,-1), 0.5, make_unique<metal>(vec3(0.5,0.5,0.5), 0.8 /*fuzzy*/)));
     // d_list.emplace_back(new sphere(vec3(1,0,-1), 0.5, make_unique<dielectric>(1.5)));
         
-    
+    // Testing camera orientation
     float R = cos(M_PI/4);
     d_list.emplace_back(new sphere(vec3(-R,0,-1), R, make_unique<lambertian>(vec3(0.0, 0.0, 1.0))));
     d_list.emplace_back(new sphere(vec3(R,0,-1), R, make_unique<lambertian>(vec3(1.0, 0.0, 0.0))));
 
-    *d_camera = new camera(90, float(nx)/float(ny));
+    *d_camera = new camera(vec3(0,0,0.25),
+                           vec3(0,0,0),
+                           vec3(0,1,0),
+                           90, float(nx)/float(ny));
     *d_world = new hitable_list(d_list);
 }
 
@@ -123,7 +126,7 @@ int main (){
     save_png(fb, nx, ny);
 
     free_world(d_list, &d_world, &d_camera);;
-    delete d_camera;
+
     delete fb;
     return 0;
 }
