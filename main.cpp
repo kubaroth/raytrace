@@ -11,6 +11,9 @@
 
 #include <float.h>  // FLT_MAX
 
+#include <chrono>
+#include <omp.h>
+
 using std::cout;
 using std::endl;
 
@@ -38,6 +41,8 @@ vec3 color(const ray& r, hitable *world, int depth){
 void render(vec3 *fb, int max_x, int max_y, int ns,
             camera *camera,
             hitable *world){
+
+#pragma omp parallel for ordered schedule(dynamic)
     for (int j = max_y-1; j >=0; j--){
         for (int i =0; i < max_x; i++){
             vec3 col(0,0,0);
@@ -158,9 +163,7 @@ int main (){
     // create_world(d_list, &d_world, &d_camera, nx, ny);
     create_scene(d_list, &d_world, &d_camera, nx, ny);
 
-        
-    clock_t start, stop;
-    start = clock();
+    auto start = chrono::system_clock::now();
 
     // Render
     render(fb,nx,ny, ns, 
@@ -168,9 +171,10 @@ int main (){
            d_world
         );
 
-    stop = clock();
-    double timer_seconds = ((double)(stop-start)) / CLOCKS_PER_SEC;
-    std::cerr << "elapsed time:" << timer_seconds << std::endl;
+    auto stop = chrono::system_clock::now();
+
+    auto timer_seconds = chrono::duration_cast<chrono::milliseconds>(stop-start);
+    cerr << "elapsed time:" << timer_seconds.count() << endl;
 
     save_png(fb, nx, ny);
 
