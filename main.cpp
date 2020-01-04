@@ -17,7 +17,7 @@ using std::endl;
 
 vec3 color(const ray& r, hitable *world, int depth){
     hit_record rec;
-    if (world->hit(r, 0.001, MAXFLOAT, rec)) {  //ignore hits very near zero
+    if (world->hit(r, 0.001, FLT_MAX, rec)) {  //ignore hits very near zero
         ray scattered;
         vec3 attenuation;  // atenuation gets updated in the mat_ptr->scatterer
         if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation,scattered)){

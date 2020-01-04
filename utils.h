@@ -5,6 +5,12 @@
 
 #include "vec3.h"
 
+// http://herbsutter.com/gotw/_102/
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args){
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
 // write an uncompressed PNG file from a uint8 RGB buffer
 struct Png {
     FILE*f; unsigned int tab[256], crc; ~Png() { fclose(f); }
