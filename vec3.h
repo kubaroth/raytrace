@@ -5,6 +5,10 @@
 #define DEV __device__
 #define HOST __host__
 #define GLOBAL __global__
+
+#include <curand.h>
+#include <curand_kernel.h>  // cuRAND
+
 #else
 #define HOSTDEV
 #define DEV
@@ -15,9 +19,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <iostream>
-
-#include <curand.h>
-#include <curand_kernel.h>  // cuRAND
 
 using namespace std;  // TODO
 
