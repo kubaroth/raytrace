@@ -11,6 +11,7 @@
 #include "utils.h"
 
 #include <float.h>  // FLT_MAX
+#include <assert.h>
 
 using std::cout;
 using std::endl;
@@ -95,6 +96,7 @@ __global__ void render(vec3 *fb, int max_x, int max_y, int ns,
 
 __global__ void create_world(hitable** d_list,
                   hitable **d_world,  /* ** - set refernce pointer to d_world */
+                  int* total_objects,
                   camera **d_camera,
                   int nx, int ny){
     if (threadIdx.x == 0 && blockIdx.x ==0) {
@@ -115,16 +117,16 @@ __global__ void create_world(hitable** d_list,
                                0.5, /* 2.0 big aperture */
                                (look_from-look_at).length()/* distance to focus */
             );
-        *d_world = new hitable_list(d_list,4);
+        // At this point we can only verify if number of objects added to d_list matches initial value
+        assert (*total_objects == obj_index);
+        *d_world = new hitable_list(d_list, obj_index);
     }
-
 }
 
-__global__ void free_world(hitable **d_list, hitable **d_world, camera **d_camera){
-    delete *(d_list);
-    delete *(d_list+1);
-    delete *(d_list+2);
-    delete *(d_list+3);
+__global__ void free_world(hitable **d_list, hitable **d_world, int* total_objects, camera **d_camera){
+    for (int i = 0; i < *total_objects; ++i){
+        delete *(d_list + i);
+    }
     delete *d_world;
     delete *d_camera;
 
@@ -138,7 +140,7 @@ __global__ void render(vec3 *fb, int max_x, int max_y){
     if ((i >= max_x) || (j>=max_y))
         return;
     int pixel_index = j * max_x + i;
-            
+
     fb[pixel_index] = vec3(float(i) / max_x,
                            float(j) / max_y,
                            0.2);
@@ -159,19 +161,23 @@ int main (){
     int tx = 8;
     int ty = 8;
 
-    int total_objects = 4;
+    // We need to know upfron tTotal number to create/allocate
+    int *total_objects;
+    cudaMallocManaged( &total_objects,  sizeof( int ) );
+    *total_objects = 4;
 
-    // make workd of hittable objects;
     hitable **d_list;
-    checkCudaErrors(cudaMalloc((void **)&d_list, total_objects*sizeof(hitable *)));
+    checkCudaErrors(cudaMalloc((void **)&d_list, (*total_objects)*sizeof(hitable *)));
     hitable **d_world;
     checkCudaErrors(cudaMalloc((void **)&d_world, sizeof(hitable *)));
     camera **d_camera;
     checkCudaErrors(cudaMalloc((void **)&d_camera, sizeof(camera *)));
 
-    create_world<<<1,1>>>(d_list, d_world, d_camera, nx, ny );
+    create_world<<<1,1>>>(d_list, d_world, total_objects, d_camera, nx, ny );
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
+
+    printf ("# objects created %i\n", *total_objects);
 
     //create a d_rand_state object for every pixel in our main routine.
     curandState *d_rand_state;
@@ -200,7 +206,7 @@ int main (){
 
     // clean up
     checkCudaErrors(cudaDeviceSynchronize());
-    free_world<<<1,1>>>(d_list,d_world, d_camera);
+    free_world<<<1,1>>>(d_list, d_world, total_objects, d_camera);
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaFree(d_list));
     checkCudaErrors(cudaFree(d_world));
