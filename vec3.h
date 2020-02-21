@@ -20,8 +20,6 @@
 #include <stdlib.h>
 #include <iostream>
 
-using namespace std;  // TODO
-
 class vec3{
 public:
     float e[3]; // all public as we have bunch of free functions to access internal v.e[1] etc  
