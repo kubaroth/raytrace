@@ -203,6 +203,7 @@ int main (){
     std::cerr << "elapsed time:" << timer_seconds << std::endl;
 
     save_png(fb, nx, ny);
+    save_ppm(fb, nx, ny);
 
     // clean up
     checkCudaErrors(cudaDeviceSynchronize());

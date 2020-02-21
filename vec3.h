@@ -48,10 +48,10 @@ public:
     HOSTDEV inline vec3& operator*=(const float t);
     HOSTDEV inline vec3& operator/=(const float t);
 
-    HOSTDEV inline vec3 operator+(const float t) { return vec3( x()+t, y()+t, z()+t); } 
-    HOSTDEV inline vec3 operator-(const float t) { return vec3( x()-t, y()-t, z()-t); } 
-    HOSTDEV inline vec3 operator*(const float t) { return vec3( x()*t, y()*t, z()*t); } 
-    HOSTDEV inline vec3 operator/(const float t) { return vec3( x()/t, y()/t, z()/t); } 
+    HOSTDEV inline vec3 operator+(const float t) { return vec3( x()+t, y()+t, z()+t); }
+    HOSTDEV inline vec3 operator-(const float t) { return vec3( x()-t, y()-t, z()-t); }
+    HOSTDEV inline vec3 operator*(const float t) { return vec3( x()*t, y()*t, z()*t); }
+    HOSTDEV inline vec3 operator/(const float t) { return vec3( x()/t, y()/t, z()/t); }
 
     HOSTDEV inline float length() const  {return sqrt(e[0]*e[0] + e[1]*e[1] + e[2]*e[2]);}
     HOSTDEV inline float squared_length() const {return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];}
@@ -162,6 +162,7 @@ HOSTDEV inline vec3 unit_vector(vec3 v){  // not a memeber funciton
 
 #define RANDVEC2 vec3(curand_uniform(local_rand_state),curand_uniform(local_rand_state),0)
 
+#ifdef __CUDACC__
 DEV vec3 random_in_unit_sphere(curandState *local_rand_state){
     vec3 p;
     do {
@@ -178,6 +179,7 @@ DEV vec3 random_in_unit_disk(curandState *local_rand_state){
     } while (dot(p,p) >= 1.0);
     return p;
 }
+#endif
 
 
 // ray origins are on the disk instead of point
@@ -323,8 +325,15 @@ public:
         horizontal = 2*half_width * u * focus_dist;
         vertical =  2*half_height * v * focus_dist;
     }
+
+
+#ifdef __CUDACC__
     DEV ray get_ray(float s, float t, curandState *local_rand_state){
         vec3 rd = lens_radius * random_in_unit_disk(local_rand_state);
+#else
+    DEV ray get_ray(float s, float t){
+        vec3 rd = lens_radius * random_in_unit_disk();
+#endif
         vec3 offset = u * rd.x() + v * rd.y();
         return ray(origin + offset, lower_left_corner +
                    s * horizontal + t * vertical
@@ -342,8 +351,11 @@ class material{  /* needs also be added to  hit_racord class */
     DEV virtual bool scatter(const ray& r_in,
                          const hit_record& rec, /* to stuff whatever information we want here instead of explicit parms*/
                          vec3 &attenuation,
-                         ray & scattered,
-                         curandState *local_rand_state) const = 0;
+                         ray & scattered
+#ifdef __CUDACC__
+                             ,curandState *local_rand_state
+#endif
+        )const = 0;
 };
 
 class lambertian : public material {
@@ -352,12 +364,21 @@ class lambertian : public material {
 
   public:
     HOSTDEV lambertian(const vec3& a) : albedo(a){}
+#ifdef __CUDACC__
     DEV virtual bool scatter(const ray& r_in,
                          const hit_record& rec,
                          vec3 &attenuation,
                          ray & scattered,
                          curandState *local_rand_state) const {
         vec3 target = rec.p +rec.normal + random_in_unit_sphere(local_rand_state);
+#else
+    DEV virtual bool scatter(const ray& r_in,
+                         const hit_record& rec,
+                         vec3 &attenuation,
+                         ray & scattered) const {
+        vec3 target = rec.p +rec.normal + random_in_unit_sphere();
+#endif
+
         scattered = ray(rec.p, target - rec.p);
         attenuation = albedo;
         return true;
@@ -378,13 +399,19 @@ class metal : public material{
     HOSTDEV metal (const vec3& a, float f=0.0) : albedo(a),fuzz(f)  {
         if (f > 1) fuzz = 1;
     }
+#ifdef __CUDACC__
     DEV virtual bool scatter (const ray& r_in, const hit_record& rec, vec3 &attenuation, ray &scattered, curandState *local_rand_state) const{
-        vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
-        scattered = ray(rec.p, reflected + fuzz * random_in_unit_sphere(local_rand_state)); // larger fuzz more blurry metal
-        attenuation = albedo;
-        return (dot(scattered.direction(), rec.normal) > 0);
-
+    vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+    scattered = ray(rec.p, reflected + fuzz * random_in_unit_sphere(local_rand_state)); // larger fuzz more blurry metal
+#else
+    DEV virtual bool scatter (const ray& r_in, const hit_record& rec, vec3 &attenuation, ray &scattered) const{
+    vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+    scattered = ray(rec.p, reflected + fuzz * random_in_unit_sphere()); // larger fuzz more blurry metal
+#endif
+    attenuation = albedo;
+    return (dot(scattered.direction(), rec.normal) > 0);
     }
+
 
 };
 
@@ -399,7 +426,7 @@ n sin(theta) = n' sin(theta')
 
 
 - the reflection is flipped
-- if the ray is in the materia  with higer refractive index - 
+- if the ray is in the materia  with higer refractive index -
    no solutino to snell law- no refraction possible (solid object
 
  */
@@ -445,13 +472,15 @@ HOSTDEV bool refract(const vec3& v, const vec3& n, float ni_over_nt, vec3& refra
         return false;
 }
 
-
-
 class dielectric : public material{
     float ref_index;
   public:
     HOSTDEV dielectric(float ri) :ref_index(ri){}
+#ifdef __CUDACC__
     DEV virtual bool scatter (const ray& r_in, const hit_record& rec, vec3 &attenuation, ray &scattered, curandState *local_rand_state) const{
+#else
+    DEV virtual bool scatter (const ray& r_in, const hit_record& rec, vec3 &attenuation, ray &scattered) const{
+#endif
         vec3 outward_normal;
         vec3 reflected = reflect(r_in.direction(), rec.normal);
         float ni_over_nt;
@@ -501,8 +530,11 @@ class dielectric : public material{
         else{
             reflect_prob = 1.0f;
         }
-
+#ifdef __CUDACC__
         if (curand_uniform(local_rand_state) < reflect_prob) {
+#else
+        if (drand48() < reflect_prob) {
+#endif
             scattered = ray(rec.p, reflected);
         }
         else{
