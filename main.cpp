@@ -10,6 +10,9 @@
 
 #include <float.h>  // FLT_MAX
 
+#include <embree3/rtcore.h>
+
+
 using std::cout;
 using std::endl;
 
@@ -77,11 +80,15 @@ void free_world(hitable **d_list, hitable **d_world){
 
 int main (){
     int ns = 10; // number of samples
-    int nx = 200;
-    int ny = 100;
+    int nx = 500;
+    int ny = 250;
     int num_pixels = nx*ny;
     size_t fb_size = num_pixels * sizeof(vec3);
 
+
+    RTCDevice rtcNewDevice();
+
+    
     //allocate FB
     vec3 *fb;
     fb = new vec3[fb_size];
