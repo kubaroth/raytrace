@@ -28,6 +28,10 @@ add_executable(a.out main.cpp)
 
 target_include_directories(a.out BEFORE PUBLIC
   ${EMBREE_INCLUDE_DIR}
+  # /home/kuba/SRC/embree/common/
+  # /home/kuba/SRC/embree/common/math
+  # /home/kuba/SRC/embree/common/sys
+  # /home/kuba/SRC/embree/common/tasking
   ${TBB_INCLUDE_DIR}
   )
 

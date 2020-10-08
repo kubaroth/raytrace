@@ -11,6 +11,7 @@
 #include <float.h>  // FLT_MAX
 
 #include <embree3/rtcore.h>
+// #include <math/vec4.h>
 
 #include <tbb/tbb.h>
 
@@ -112,28 +113,106 @@ public:
 
 };
 
+void first_test_ray(RTCScene& scene, RTCIntersectContext& context){
+    auto r1 = Ray(0, 0, -1, 0, 0, 1);
+    rtcIntersect1(scene, &context, &r1);
 
-void waitForKeyPressedUnderWindows()
-{
-#if defined(_WIN32)
-  HANDLE hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
 
-  CONSOLE_SCREEN_BUFFER_INFO csbi;
-  if (!GetConsoleScreenBufferInfo(hStdOutput, &csbi)) {
-    printf("GetConsoleScreenBufferInfo failed: %d\n", GetLastError());
-    return;
+  // printf("%f, %f, %f: ", ox, oy, oz);
+  if (r1.get().hit.geomID != RTC_INVALID_GEOMETRY_ID)
+  {
+    /* Note how geomID and primID identify the geometry we just hit.
+     * We could use them here to interpolate geometry information,
+     * compute shading, etc.
+     * Since there is only a single triangle in this scene, we will
+     * get geomID=0 / primID=0 for all hits.
+     * There is also instID, used for instancing. See
+     * the instancing tutorials for more information */
+    printf("Found intersection on geometry %d, primitive %d at tfar=%f\n",
+           r1.get().hit.geomID,
+           r1.get().hit.primID,
+           r1.get().ray.tfar);
+  }
+  else {
+    printf("Did not find any intersection.\n");
   }
 
-  /* do not pause when running on a shell */
-  if (csbi.dwCursorPosition.X != 0 || csbi.dwCursorPosition.Y != 0)
-    return;
+    // /* This will hit the triangle at t=1. */
+    // castRay(scene, 0, 0, -1, 0, 0, 1);
 
-  /* only pause if running in separate console window. */
-  printf("\n\tPress any key to exit...\n");
-  int ch = getch();
-#endif
+    // /* This will not hit anything. */
+    // castRay(scene, 1, 1, -1, 0, 0, 1);
+
+
 }
 
+void render_embree(vec3 *fb, int max_x, int max_y, int ns,
+                   camera *camera,
+                   RTCScene& scene, RTCIntersectContext& context) {
+
+
+
+    
+    for (int j = max_y-1; j >=0; j--){
+        for (int i =0; i < max_x; i++){
+            vec3 color(0,0,0);
+            int pixel_index = j*max_x + i;
+            for (int s=0; s<ns; s++) {  // sampling
+                float u = float(i + drand48()) / float(max_x);
+                float v = float(j + drand48()) / float(max_y);
+                // ray r = camera->get_ray(u, v);
+                // col += color(r, world);
+
+
+
+                /* initialize ray */
+                // Ray ray(Vec3fa(camera.xfm.p),
+                //         Vec3fa(normalize(x*camera.xfm.l.vx + y*camera.xfm.l.vy + camera.xfm.l.vz)),
+                //         0.0f,
+                //         inf);
+
+                ray cam_ray = camera->get_ray(u, v);
+                auto o = cam_ray.origin();
+                auto d = cam_ray.direction();
+                auto r1 = Ray(o.x(), o.y(), o.z(), d.x(), d.y(), d.z());
+                rtcIntersect1(scene, &context, &r1);
+    
+                /* intersect ray with scene */
+                // rtcIntersect1(data.g_scene,&context,RTCRayHit_(ray));
+                // RayStats_addRay(stats);
+
+                // /* shade pixels */
+                // Vec3fa color = Vec3fa(0.0f);
+                if (r1.get().hit.geomID != RTC_INVALID_GEOMETRY_ID) {
+                //         Vec3fa diffuse = data.face_colors[ray.primID];
+                //         color = color + diffuse*0.5f;
+                //         Vec3fa lightDir = normalize(Vec3fa(-1,-1,-1));
+
+                //         /* initialize shadow ray */
+                //         Ray shadow(ray.org + ray.tfar*ray.dir, neg(lightDir), 0.001f, inf, 0.0f);
+
+                //         /* trace shadow ray */
+                //         rtcOccluded1(data.g_scene,&context,RTCRay_(shadow));
+                //         RayStats_addShadowRay(stats);
+
+                //         /* add light contribution */
+                //         if (shadow.tfar >= 0.0f)
+                //             color = color + diffuse*clamp(-dot(lightDir,normalize(ray.Ng)),0.0f,1.0f);
+                    }
+
+                // /* write color to framebuffer */
+                // unsigned int r = (unsigned int) (255.0f * clamp(color.x,0.0f,1.0f));
+                // unsigned int g = (unsigned int) (255.0f * clamp(color.y,0.0f,1.0f));
+                // unsigned int b = (unsigned int) (255.0f * clamp(color.z,0.0f,1.0f));
+                // pixels[y*width+x] = (b << 16) + (g << 8) + r;
+
+
+            }
+            fb[pixel_index] = color/float(ns);
+
+        }
+    }
+}
 
 int main (){
     int ns = 10; // number of samples
@@ -191,45 +270,47 @@ int main (){
         indices[0] = 0; indices[1] = 1; indices[2] = 2;
     }
 
+
     rtcCommitGeometry(geom);
     rtcAttachGeometry(scene, geom);
     rtcReleaseGeometry(geom);
-    rtcCommitScene(scene);
 
+    // typedef Vec4<float> Vec4f;
+    RTCGeometry spherePoint = rtcNewGeometry(device,   RTC_GEOMETRY_TYPE_SPHERE_POINT);
 
+    int NUM_POINTS = 1;
+    float* point_vertices = (float*)rtcSetNewGeometryBuffer(spherePoint,
+                                                            RTC_BUFFER_TYPE_VERTEX,
+                                                            0,
+                                                            RTC_FORMAT_FLOAT4,
+                                                            4 * sizeof(float),
+                                                            NUM_POINTS);
+    point_vertices[0] = 0.f;
+    point_vertices[1] = 0.f;
+    point_vertices[2] = 0.f;
+    point_vertices[3] = 1.f;  // radius?
+    
+    // TODO set position, st camera
+    rtcCommitGeometry(spherePoint);
+    rtcAttachGeometry(scene, spherePoint);
+    rtcReleaseGeometry(spherePoint);
+
+    
+    rtcCommitScene(scene);  // build bvh
+
+    
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
 
-    auto r1 = Ray(0, 0, -1, 0, 0, 1);
-    rtcIntersect1(scene, &context, &r1);
+    // first_test_ray(scene, context);
+    vec3 *fb_embree;
+    fb_embree = new vec3[fb_size];
 
-
-  // printf("%f, %f, %f: ", ox, oy, oz);
-  if (r1.get().hit.geomID != RTC_INVALID_GEOMETRY_ID)
-  {
-    /* Note how geomID and primID identify the geometry we just hit.
-     * We could use them here to interpolate geometry information,
-     * compute shading, etc.
-     * Since there is only a single triangle in this scene, we will
-     * get geomID=0 / primID=0 for all hits.
-     * There is also instID, used for instancing. See
-     * the instancing tutorials for more information */
-    printf("Found intersection on geometry %d, primitive %d at tfar=%f\n",
-           r1.get().hit.geomID,
-           r1.get().hit.primID,
-           r1.get().ray.tfar);
-  }
-  else
-    printf("Did not find any intersection.\n");
-
-
-    // /* This will hit the triangle at t=1. */
-    // castRay(scene, 0, 0, -1, 0, 0, 1);
-
-    // /* This will not hit anything. */
-    // castRay(scene, 1, 1, -1, 0, 0, 1);
-
-
+    render_embree(fb_embree, nx,ny, ns,
+                  d_camera,
+                  scene, context);
+    
+    
     rtcReleaseScene(scene);
     rtcReleaseDevice(device);
 
@@ -240,6 +321,7 @@ int main (){
     std::cerr << "elapsed time:" << timer_seconds << std::endl;
 
     save_png(fb, nx, ny);
+    save_png(fb_embree, nx, ny, "test_embree.png");
 
     return 0;
 }

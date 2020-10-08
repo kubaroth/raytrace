@@ -58,7 +58,7 @@ struct Png {
 //     ofs.close();
 // }
 
-void save_png(vec3 *fb, int width, int height){
+void save_png(vec3 *fb, int width, int height, const std::string & name="test.png"){
     int w = width, h = height;
     int total = w * h; // saving Png requires to flip upside down (vertically?)
 
@@ -77,7 +77,7 @@ void save_png(vec3 *fb, int width, int height){
             image[pixel_index*3+2] = (unsigned char)ib;
         }
     }
-    Png("test.png", w, h, image);
+    Png(name.c_str(), w, h, image);
     delete [] image;
 
 }
