@@ -111,6 +111,19 @@ public:
     RTCRayHit operator*() {return rayhit;};
     RTCRayHit get() {return rayhit;};
 
+    friend ostream& operator<<(ostream& os, const Ray& rhs){
+        os<< "origin:";
+        os<< '[' <<rhs.rayhit.ray.org_x;
+        os<< ','<< rhs.rayhit.ray.org_y;
+        os<< ','<< rhs.rayhit.ray.org_z << ']';
+        os<< " dir:";
+        os<< '[' <<rhs.rayhit.ray.dir_x;
+        os<< ','<< rhs.rayhit.ray.dir_y;
+        os<< ','<< rhs.rayhit.ray.dir_z << ']' << '\n';
+
+        return os;
+    }
+
 };
 
 void first_test_ray(RTCScene& scene, RTCIntersectContext& context){
@@ -172,11 +185,14 @@ void render_embree(vec3 *fb, int max_x, int max_y, int ns,
                 //         inf);
 
                 ray cam_ray = camera->get_ray(u, v);
+
                 auto o = cam_ray.origin();
                 auto d = cam_ray.direction();
                 auto r1 = Ray(o.x(), o.y(), o.z(), d.x(), d.y(), d.z());
                 rtcIntersect1(scene, &context, &r1);
-    
+
+
+
                 /* intersect ray with scene */
                 // rtcIntersect1(data.g_scene,&context,RTCRayHit_(ray));
                 // RayStats_addRay(stats);
@@ -184,6 +200,10 @@ void render_embree(vec3 *fb, int max_x, int max_y, int ns,
                 // /* shade pixels */
                 // Vec3fa color = Vec3fa(0.0f);
                 if (r1.get().hit.geomID != RTC_INVALID_GEOMETRY_ID) {
+
+                    color += vec3(0.5,0.5,0.5);
+                    cout << r1 <<endl;
+
                 //         Vec3fa diffuse = data.face_colors[ray.primID];
                 //         color = color + diffuse*0.5f;
                 //         Vec3fa lightDir = normalize(Vec3fa(-1,-1,-1));
@@ -215,7 +235,7 @@ void render_embree(vec3 *fb, int max_x, int max_y, int ns,
 }
 
 int main (){
-    int ns = 10; // number of samples
+    int ns = 2; // number of samples
     int nx = 500;
     int ny = 250;
     int num_pixels = nx*ny;
@@ -287,8 +307,8 @@ int main (){
                                                             NUM_POINTS);
     point_vertices[0] = 0.f;
     point_vertices[1] = 0.f;
-    point_vertices[2] = 0.f;
-    point_vertices[3] = 1.f;  // radius?
+    point_vertices[2] = -1.f;
+    point_vertices[3] = 0.5;  // radius?
     
     // TODO set position, st camera
     rtcCommitGeometry(spherePoint);
